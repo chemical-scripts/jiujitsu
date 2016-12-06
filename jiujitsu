@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION=0.1.0
+VERSION=0.2.0
 
 # Usage:
 #   jiujitsu [-n processors] program inputfile [inputfile...]
@@ -14,6 +14,7 @@ function help_page {
   version_page
   sed -ne '/#[^!]\(.*\)/{
     /\/#/d
+    /"#/d
     s/    //
     s/# //p
   }' "$0"
@@ -73,7 +74,7 @@ INPUT="${inputfile_basename}"
 
 NWCHEM="/opt/local/nwchem/bin/nwchem"
 
-cd \$PBS_O_WORKDIR
+cd "\$PBS_O_WORKDIR"
 mpiexec "\$NWCHEM" "\$INPUT.nw" >& "\$INPUT.out"
 eor
 
@@ -107,8 +108,6 @@ function submit_orca_gauss {
 
 INPUT="${inputfile_basename}"
 
-# Do not change anything from here.
-
 ORCA="/opt/local/orca/orca"
 
 LOCAL=\$(mktemp -d -p "\$SCRATCH")
@@ -120,7 +119,7 @@ cp -f "\$PBS_O_WORKDIR"/*.{inp,gbw,opt,pot,xyz} "\$LOCAL" >& /dev/null
 cd "\$LOCAL"
 "\$ORCA" "\$INPUT.inp" >& "\$PBS_O_WORKDIR/\$INPUT.out"
 
-cp -f \$(ls | grep -v ".inp\|.tmp") "\$PBS_O_WORKDIR"
+cp -f "\$(ls | grep -v ".inp\|.tmp")" "\$PBS_O_WORKDIR"
 cd "\$PBS_O_WORKDIR"
 rm -rf "\$LOCAL"
 eor
