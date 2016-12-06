@@ -73,7 +73,7 @@ INPUT="${inputfile_basename}"
 
 NWCHEM="/opt/local/nwchem/bin/nwchem"
 
-cd \$PBS_O_WORKDIR
+cd "\$PBS_O_WORKDIR"
 mpiexec "\$NWCHEM" "\$INPUT.nw" >& "\$INPUT.out"
 eor
 
@@ -120,7 +120,7 @@ cp -f "\$PBS_O_WORKDIR"/*.{inp,gbw,opt,pot,xyz} "\$LOCAL" >& /dev/null
 cd "\$LOCAL"
 "\$ORCA" "\$INPUT.inp" >& "\$PBS_O_WORKDIR/\$INPUT.out"
 
-cp -f \$(ls | grep -v ".inp\|.tmp") "\$PBS_O_WORKDIR"
+cp -f "\$(ls | grep -v ".inp\|.tmp")" "\$PBS_O_WORKDIR"
 cd "\$PBS_O_WORKDIR"
 rm -rf "\$LOCAL"
 eor
