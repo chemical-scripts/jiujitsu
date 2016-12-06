@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION=0.1.0
+VERSION=0.2.0
 
 # Usage:
 #   jiujitsu [-n processors] program inputfile [inputfile...]
@@ -14,6 +14,7 @@ function help_page {
   version_page
   sed -ne '/#[^!]\(.*\)/{
     /\/#/d
+    /"#/d
     s/    //
     s/# //p
   }' "$0"
@@ -106,8 +107,6 @@ function submit_orca_gauss {
 #PBS -j oe
 
 INPUT="${inputfile_basename}"
-
-# Do not change anything from here.
 
 ORCA="/opt/local/orca/orca"
 
