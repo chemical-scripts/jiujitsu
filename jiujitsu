@@ -108,8 +108,6 @@ function submit_orca_gauss {
 
 INPUT="${inputfile_basename}"
 
-# Do not change anything from here.
-
 ORCA="/opt/local/orca/orca"
 
 LOCAL=\$(mktemp -d -p "\$SCRATCH")
