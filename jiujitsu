@@ -1,0 +1,177 @@
+#!/bin/bash
+VERSION=0.1.0
+
+# Usage:
+#   jiujitsu [-n processors] program inputfile [inputfile...]
+#   jiujitsu -h
+#   jiujitsu -v
+
+function version_page {
+  echo "$(basename "$0")" "$VERSION"
+}
+
+function help_page {
+  version_page
+  sed -ne '/#[^!]\(.*\)/{
+    /\/#/d
+    s/    //
+    s/# //p
+  }' "$0"
+}
+
+nprocs=1
+
+# Options:
+while getopts ":hvn:" opt "$@"; do
+  case $opt in
+    h)
+      # -h show this help message
+      help_page
+      exit 0
+      ;;
+    v)
+      # -v show version
+      version_page
+      exit 0
+      ;;
+    n)
+      # -n number of processors (does not currently work with ORCA in Gauss)
+      nprocs=$OPTARG
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      exit 1
+      ;;
+  esac
+done
+
+shift $((OPTIND-1))
+
+program=$1
+shift
+
+# Examples:
+
+function submit_nwchem_gauss {
+  inputfile=$1
+
+  inputfile_basename=$(basename "$inputfile" ".nw")
+  jobname=$(echo "$inputfile_basename" | cut -c 1-10)
+
+  cat <<eor > nwchem.sh
+#!/bin/bash
+#PBS -S /bin/bash
+#PBS -N ${jobname}
+#PBS -l select=${nprocs}
+#PBS -j oe
+
+INPUT="${inputfile_basename}"
+
+NWCHEM="/opt/local/nwchem/bin/nwchem"
+
+cd \$PBS_O_WORKDIR
+mpiexec "\$NWCHEM" "\$INPUT.nw" >& "\$INPUT.out"
+eor
+
+  #  $ jiujitsu -n 20 nwchem *.nw
+  qsub nwchem.sh
+}
+
+function submit_nwchem_jupiter {
+  inputfile=$1
+
+  inputfile_basename=$(basename "$inputfile" ".nw")
+  qsub -V -l nodes=1:ppn="$nprocs",walltime=01:00:00:00 \
+             /nfs-share/scripts/submit.nwchem.sh -N "$inputfile_basename"
+}
+
+function submit_orca_gauss {
+  inputfile=$1
+
+  inputfile_basename=$(basename "$inputfile" ".inp")
+  jobname=$(echo "$inputfile_basename" | cut -c 1-10)
+
+  nprocs=$(sed -ne '/nprocs/{s/.*nprocs[^0-9]*\([0-9][0-9]*\).*/\1/p}' \
+                   "$inputfile")
+
+  cat <<eor > orca.sh
+#!/bin/bash
+#PBS -S /bin/bash
+#PBS -N ${jobname}
+#PBS -l nodes=1:cpp=${nprocs}
+#PBS -j oe
+
+INPUT="${inputfile_basename}"
+
+# Do not change anything from here.
+
+ORCA="/opt/local/orca/orca"
+
+LOCAL=\$(mktemp -d -p "\$SCRATCH")
+cat "\$PBS_NODEFILE" > "\$PBS_O_WORKDIR/.jobinfo"
+echo "\$LOCAL" >> "\$PBS_O_WORKDIR/.jobinfo"
+
+cp -f "\$PBS_O_WORKDIR"/*.{inp,gbw,opt,pot,xyz} "\$LOCAL" >& /dev/null
+
+cd "\$LOCAL"
+"\$ORCA" "\$INPUT.inp" >& "\$PBS_O_WORKDIR/\$INPUT.out"
+
+cp -f \$(ls | grep -v ".inp\|.tmp") "\$PBS_O_WORKDIR"
+cd "\$PBS_O_WORKDIR"
+rm -rf "\$LOCAL"
+eor
+
+  #  $ jiujitsu orca {methane,ethane,n-propane}.inp
+  qsub orca.sh
+}
+
+function submit_orca_jupiter {
+  inputfile=$1
+
+  inputfile_basename=$(basename "$inputfile" ".inp")
+  qsub -V -l nodes=1:ppn="$nprocs",walltime=01:00:00:00 \
+             /nfs-share/scripts/submit.orca.sh -N "$inputfile_basename"
+}
+
+called_from=$(pwd)
+
+for inputfile in "$@"; do
+  if [ -r "$inputfile" ]; then
+    cd "$(dirname "$inputfile")"
+
+    case $(hostname) in
+      gauss)
+        case $program in
+          nwchem)
+            submit_nwchem_gauss "$(basename "$inputfile")"
+            ;;
+          orca)
+            submit_orca_gauss "$(basename "$inputfile")"
+            ;;
+        esac
+        ;;
+      jupiter)
+        case $program in
+          nwchem)
+            submit_nwchem_jupiter "$(basename "$inputfile")"
+            ;;
+          orca)
+            submit_orca_jupiter "$(basename "$inputfile")"
+            ;;
+        esac
+        ;;
+    esac
+  else
+    echo "  $inputfile does not exist or is not readable."
+    exit 1
+  fi
+
+  cd "$called_from"
+done
+
+# jiujitsu <https://github.com/chemical-scripts/jiujitsu>
+# is licensed under the MIT License.
