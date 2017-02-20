@@ -132,6 +132,15 @@ function submit_orca_jupiter {
   inputfile=$1
 
   inputfile_basename=$(basename "$inputfile" ".inp")
+
+  sed -i -e '/pal/,/end/{
+    /nproc/d
+  }' "$inputfile"
+  sed -i -e '/pal/{
+    N
+    s/^\s*%pal\s*end\s*$//
+  }' "$inputfile"
+
   qsub -V -l nodes=1:ppn="$nprocs",walltime=01:00:00:00 \
              /nfs-share/scripts/submit.orca.sh -N "$inputfile_basename"
 }
