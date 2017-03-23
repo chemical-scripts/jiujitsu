@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION=0.2.0
+VERSION=0.2.1
 
 # Usage:
 #   jiujitsu [-n processors] program inputfile [inputfile...]
@@ -119,7 +119,7 @@ cp -f "\$PBS_O_WORKDIR"/*.{inp,gbw,opt,pot,xyz} "\$LOCAL" >& /dev/null
 cd "\$LOCAL"
 "\$ORCA" "\$INPUT.inp" >& "\$PBS_O_WORKDIR/\$INPUT.out"
 
-cp -f "\$(ls | grep -v ".inp\|.tmp")" "\$PBS_O_WORKDIR"
+cp -f \$(ls | grep -v ".inp\|.tmp") "\$PBS_O_WORKDIR"
 cd "\$PBS_O_WORKDIR"
 rm -rf "\$LOCAL"
 eor
