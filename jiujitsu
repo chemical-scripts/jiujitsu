@@ -103,7 +103,7 @@ function submit_orca_gauss {
 
   if grep -q "nprocs" "$inputfile"; then
     nprocs=$(sed -ne '/nprocs/{s/.*nprocs[^0-9]*\([0-9][0-9]*\).*/\1/p}' \
-                     "$inputfile")
+                     "$inputfile" | tail -1)
   else 
     printf "\n%%pal\n nprocs 8\nend\n" >> "$inputfile"
 
