@@ -21,6 +21,7 @@ function help_page {
 }
 
 nprocs=1
+proc_hours=192
 
 # Options:
 while getopts ":hvn:" opt "$@"; do
@@ -55,6 +56,8 @@ shift $((OPTIND-1))
 program=$1
 shift
 
+hours=$(echo "$proc_hours/$nprocs" | bc)
+
 # Examples:
 
 function submit_nwchem_gauss {
@@ -86,7 +89,7 @@ function submit_nwchem_jupiter {
   inputfile=$1
 
   inputfile_basename=$(basename "$inputfile" ".nw")
-  qsub -V -l nodes=1:ppn="$nprocs",walltime=01:00:00:00 \
+  qsub -V -l nodes=1:ppn="$nprocs",walltime=00:"${hours}":00:00 \
              /nfs-share/scripts/submit.nwchem.sh -N "$inputfile_basename"
 }
 
@@ -141,7 +144,7 @@ function submit_orca_jupiter {
     s/^\s*%pal\s*end\s*$//
   }' "$inputfile"
 
-  qsub -V -l nodes=1:ppn="$nprocs",walltime=01:00:00:00 \
+  qsub -V -l nodes=1:ppn="$nprocs",walltime=00:"${hours}":00:00 \
              /nfs-share/scripts/submit.orca.2014may.sh -N "$inputfile_basename"
 }
 
@@ -158,7 +161,7 @@ function submit_orca4_jupiter {
     s/^\s*%pal\s*end\s*$//
   }' "$inputfile"
 
-  qsub -V -l nodes=1:ppn="$nprocs",walltime=01:00:00:00 \
+  qsub -V -l nodes=1:ppn="$nprocs",walltime=00:"${hours}":00:00 \
              /nfs-share/scripts/submit.orca.2017mar.sh -N "$inputfile_basename"
 }
 
@@ -191,6 +194,9 @@ for inputfile in "$@"; do
             submit_orca4_jupiter "$(basename "$inputfile")"
             ;;
         esac
+        ;;
+      mothership)
+        nohup marathon -n "$nprocs" "$program" "$inputfile" &> /dev/null &
         ;;
     esac
   else
