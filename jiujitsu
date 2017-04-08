@@ -56,7 +56,7 @@ shift $((OPTIND-1))
 program=$1
 shift
 
-hours=$(echo "$proc_hours/$nprocs" | bc)
+hours=$(echo "$proc_hours/$nprocs + 1" | bc)
 
 # Examples:
 
