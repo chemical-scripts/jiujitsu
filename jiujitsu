@@ -21,6 +21,7 @@ function help_page {
 }
 
 nprocs=1
+hours=24
 
 # Options:
 while getopts ":hvn:" opt "$@"; do
@@ -86,7 +87,7 @@ function submit_nwchem_jupiter {
   inputfile=$1
 
   inputfile_basename=$(basename "$inputfile" ".nw")
-  qsub -V -l nodes=1:ppn="$nprocs",walltime=01:00:00:00 \
+  qsub -V -l nodes=1:ppn="$nprocs",walltime=00:${hours}:00:00 \
              /nfs-share/scripts/submit.nwchem.sh -N "$inputfile_basename"
 }
 
@@ -141,7 +142,7 @@ function submit_orca_jupiter {
     s/^\s*%pal\s*end\s*$//
   }' "$inputfile"
 
-  qsub -V -l nodes=1:ppn="$nprocs",walltime=01:00:00:00 \
+  qsub -V -l nodes=1:ppn="$nprocs",walltime=00:${hours}:00:00 \
              /nfs-share/scripts/submit.orca.2014may.sh -N "$inputfile_basename"
 }
 
@@ -158,7 +159,7 @@ function submit_orca4_jupiter {
     s/^\s*%pal\s*end\s*$//
   }' "$inputfile"
 
-  qsub -V -l nodes=1:ppn="$nprocs",walltime=01:00:00:00 \
+  qsub -V -l nodes=1:ppn="$nprocs",walltime=00:${hours}:00:00 \
              /nfs-share/scripts/submit.orca.2017mar.sh -N "$inputfile_basename"
 }
 
