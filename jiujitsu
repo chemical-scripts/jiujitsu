@@ -65,8 +65,9 @@ function submit_nwchem_gauss {
 
   inputfile_basename=$(basename "$inputfile" ".nw")
   jobname=$(echo "$inputfile_basename" | cut -c 1-10)
+  subscript="${jobname}.sh"
 
-  cat <<eor > nwchem.sh
+  cat <<eor > "${subscript}"
 #!/bin/bash
 #PBS -S /bin/bash
 #PBS -N ${jobname}
@@ -82,7 +83,7 @@ mpiexec "\$NWCHEM" "\$INPUT.nw" >& "\$INPUT.out"
 eor
 
   #  $ jiujitsu -n 20 nwchem *.nw
-  qsub nwchem.sh
+  qsub "${subscript}"
 }
 
 function submit_nwchem_jupiter {
@@ -98,6 +99,7 @@ function submit_orca_gauss {
 
   inputfile_basename=$(basename "$inputfile" ".inp")
   jobname=$(echo "$inputfile_basename" | cut -c 1-10)
+  subscript="${jobname}.sh"
 
   if grep -q "nprocs" "$inputfile"; then
     nprocs=$(sed -ne '/nprocs/{s/.*nprocs[^0-9]*\([0-9][0-9]*\).*/\1/p}' \
@@ -108,7 +110,7 @@ function submit_orca_gauss {
     nprocs="8"
   fi
 
-  cat <<eor > orca.sh
+  cat <<eor > "${subscript}"
 #!/bin/bash
 #PBS -S /bin/bash
 #PBS -N ${jobname}
@@ -134,7 +136,7 @@ rm -rf "\$LOCAL"
 eor
 
   #  $ jiujitsu orca {methane,ethane,n-propane}.inp
-  qsub orca.sh
+  qsub "${subscript}"
 }
 
 function submit_orca_jupiter {
