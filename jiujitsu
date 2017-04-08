@@ -195,6 +195,9 @@ for inputfile in "$@"; do
             ;;
         esac
         ;;
+      mothership)
+        nohup marathon -n "$nprocs" "$program" "$inputfile" &> /dev/null &
+        ;;
     esac
   else
     echo "  $inputfile does not exist or is not readable."
