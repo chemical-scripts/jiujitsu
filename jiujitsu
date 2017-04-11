@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION=0.3.0
+VERSION=0.4.0
 
 # Usage:
 #   jiujitsu [-n processors] [-t time-multiplier] program inputfile [inputfile...]
