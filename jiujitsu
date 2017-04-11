@@ -2,7 +2,7 @@
 VERSION=0.3.0
 
 # Usage:
-#   jiujitsu [-n processors] program inputfile [inputfile...]
+#   jiujitsu [-n processors] [-t time-multiplier] program inputfile [inputfile...]
 #   jiujitsu -h
 #   jiujitsu -v
 
@@ -21,10 +21,11 @@ function help_page {
 }
 
 nprocs=1
+timemultiplier=1
 proc_hours_per_atom="2.8"
 
 # Options:
-while getopts ":hvn:" opt "$@"; do
+while getopts ":hvn:t:" opt "$@"; do
   case $opt in
     h)
       # -h show this help message
@@ -39,6 +40,10 @@ while getopts ":hvn:" opt "$@"; do
     n)
       # -n number of processors (does not currently work with ORCA in Gauss)
       nprocs=$OPTARG
+      ;;
+    t)
+      # -t time multiplier (only works in Jupiter)
+      timemultiplier=$OPTARG
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -91,7 +96,7 @@ function submit_nwchem_jupiter {
 
   natoms=$(sed -n -e '/geometry/,/end/{/geometry/d;/end/d;p}' $inputfile | wc -l)
   
-  hours=$(echo "($natoms*$proc_hours_per_atom)/$nprocs + 1" | bc)
+  hours=$(echo "$timemultiplier*(($natoms*$proc_hours_per_atom)/$nprocs + 1)" | bc)
   
   qsub -V -l nodes=1:ppn="$nprocs",walltime=00:"${hours}":00:00 \
              /nfs-share/scripts/submit.nwchem.sh -N "$inputfile_basename"
@@ -153,7 +158,7 @@ function submit_orca_jupiter {
     natoms=$(sed -n -e '/\*xyz/,/^\*$/{/\*xyz/d;/^\*$/d;p}' $inputfile | wc -l)
   fi
 
-  hours=$(echo "($natoms*$proc_hours_per_atom)/$nprocs + 1" | bc)
+  hours=$(echo "$timemultiplier*(($natoms*$proc_hours_per_atom)/$nprocs + 1)" | bc)
 
   sed -i -e '/pal/,/end/{
     /nproc/d
@@ -178,7 +183,7 @@ function submit_orca4_jupiter {
     natoms=$(sed -n -e '/\*xyz/,/^\*$/{/\*xyz/d;/^\*$/d;p}' $inputfile | wc -l)
   fi
 
-  hours=$(echo "($natoms*$proc_hours_per_atom)/$nprocs + 1" | bc)
+  hours=$(echo "$timemultiplier*(($natoms*$proc_hours_per_atom)/$nprocs + 1)" | bc)
 
   sed -i -e '/pal/,/end/{
     /nproc/d
