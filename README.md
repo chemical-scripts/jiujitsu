@@ -12,5 +12,6 @@ After downloading the tarball and using `cd` to go where the files are, simply d
 
 ## TODO
 
+- (A) Support for quartic time prediction.
 - (A) Support GAMESS.
 - (B) Set number of threads for ORCA in Gauss using the command line.

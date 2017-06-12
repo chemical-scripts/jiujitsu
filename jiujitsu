@@ -22,7 +22,7 @@ function help_page {
 
 nprocs=1
 timemultiplier=1
-proc_hours_per_atom="2.8"
+proc_hours_per_atom="7"
 
 # Options:
 while getopts ":hvn:t:" opt "$@"; do
