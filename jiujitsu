@@ -63,6 +63,32 @@ shift
 
 # Examples:
 
+function submit_gamess_gauss {
+  inputfile=$1
+
+  inputfile_basename=$(basename "$inputfile" ".inp")
+  jobname=$(echo "$inputfile_basename" | cut -c 1-10)
+  subscript="${jobname}.sh"
+
+  cat <<eor > "${subscript}"
+#!/bin/bash
+#PBS -S /bin/bash
+#PBS -N ${jobname}
+#PBS -l nodes=1:ppn=${nprocs}
+#PBS -j oe
+
+INPUT="${inputfile_basename}"
+
+GAMESS="/opt/local/gamess/rungms"
+
+cd "\$PBS_O_WORKDIR"
+"\$GAMESS" "\$INPUT.inp" >& "\$INPUT.out"
+eor
+
+  #  $ jiujitsu -n 24 gamess *.inp
+  qsub "${subscript}"
+}
+
 function submit_nwchem_gauss {
   inputfile=$1
 
@@ -206,6 +232,9 @@ for inputfile in "$@"; do
     case $(hostname) in
       gauss)
         case $program in
+          gamess)
+            submit_gamess_gauss "$(basename "$inputfile")"
+            ;;
           nwchem)
             submit_nwchem_gauss "$(basename "$inputfile")"
             ;;
