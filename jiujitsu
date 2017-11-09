@@ -220,7 +220,7 @@ function submit_orca4_jupiter {
   }' "$inputfile"
 
   qsub -V -l nodes=1:ppn="$nprocs",walltime=00:"${hours}":00:00 \
-             /nfs-share/scripts/submit.orca.2017mar.sh -N "$inputfile_basename"
+             /nfs-share/scripts/submit.orca.2017out.sh -N "$inputfile_basename"
 }
 
 called_from=$(pwd)
