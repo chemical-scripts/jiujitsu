@@ -153,13 +153,13 @@ function submit_orca_gauss {
 
 INPUT="${inputfile_basename}"
 
-ORCA="/opt/local/orca/orca"
+ORCA=/opt/local/orca-3.0.3/orca
 
 LOCAL=\$(mktemp -d -p "\$SCRATCH")
 cat "\$PBS_NODEFILE" > "\$PBS_O_WORKDIR/.jobinfo"
 echo "\$LOCAL" >> "\$PBS_O_WORKDIR/.jobinfo"
 
-cp -f "\$PBS_O_WORKDIR"/*.{inp,gbw,opt,pot,xyz} "\$LOCAL" >& /dev/null
+cp -f "\$PBS_O_WORKDIR"/*.{inp,gbw,hess,opt,pot,xyz} "\$LOCAL" >& /dev/null
 
 cd "\$LOCAL"
 "\$ORCA" "\$INPUT.inp" >& "\$PBS_O_WORKDIR/\$INPUT.out"
@@ -170,6 +170,53 @@ rm -rf "\$LOCAL"
 eor
 
   #  $ jiujitsu orca {methane,ethane,n-propane}.inp
+  qsub "${subscript}"
+}
+
+function submit_orca4_gauss {
+  inputfile=$1
+
+  inputfile_basename=$(basename "$inputfile" ".inp")
+  jobname=$(echo "$inputfile_basename" | cut -c 1-10)
+  subscript="${jobname}.sh"
+
+  if grep -q "nprocs" "$inputfile"; then
+    nprocs=$(sed -ne '/nprocs/{s/.*nprocs[^0-9]*\([0-9][0-9]*\).*/\1/p}' \
+                     "$inputfile" | tail -1)
+  else 
+    printf "\n%%pal\n nprocs 8\nend\n" >> "$inputfile"
+
+    nprocs="8"
+  fi
+
+  cat <<eor > "${subscript}"
+#!/bin/bash
+#PBS -S /bin/bash
+#PBS -N ${jobname}
+#PBS -l nodes=1:ppn=${nprocs}
+##PBS -l select=4
+#PBS -j oe
+
+INPUT="${inputfile_basename}"
+
+OMP_NUM_THREADS=${nprocs}
+ORCA4="/home/u/dudektri/bin/orca_4_0_1_2_linux_x86-64_openmpi202/orca"
+
+LOCAL=\$(mktemp -d -p "\$SCRATCH")
+cat "\$PBS_NODEFILE" > "\$PBS_O_WORKDIR/.jobinfo"
+echo "\$LOCAL" >> "\$PBS_O_WORKDIR/.jobinfo"
+
+cp -f "\$PBS_O_WORKDIR"/*.{inp,gbw,hess,opt,pot,xyz} "\$LOCAL" >& /dev/null
+
+cd "\$LOCAL"
+"\$ORCA4" "\$INPUT.inp" >& "\$PBS_O_WORKDIR/\$INPUT.out"
+
+cp -f \$(ls | grep -v ".inp\|.tmp") "\$PBS_O_WORKDIR"
+cd "\$PBS_O_WORKDIR"
+rm -rf "\$LOCAL"
+eor
+
+  #  $ jiujitsu orca4 {methane,ethane,n-propane}.inp
   qsub "${subscript}"
 }
 
@@ -240,6 +287,9 @@ for inputfile in "$@"; do
             ;;
           orca)
             submit_orca_gauss "$(basename "$inputfile")"
+            ;;
+          orca4)
+            submit_orca4_gauss "$(basename "$inputfile")"
             ;;
         esac
         ;;
