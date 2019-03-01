@@ -158,6 +158,7 @@ ORCA=/opt/local/orca-3.0.3/orca
 LOCAL=\$(mktemp -d -p "\$SCRATCH")
 cat "\$PBS_NODEFILE" > "\$PBS_O_WORKDIR/.jobinfo"
 echo "\$LOCAL" >> "\$PBS_O_WORKDIR/.jobinfo"
+echo "\$PBS_JOBID" >> "\$PBS_O_WORKDIR/.jobinfo"
 
 cp -f "\$PBS_O_WORKDIR"/*.{inp,gbw,hess,opt,pot,xyz} "\$LOCAL" >& /dev/null
 
@@ -205,6 +206,7 @@ ORCA4="/home/u/dudektri/bin/orca_4_0_1_2_linux_x86-64_openmpi202/orca"
 LOCAL=\$(mktemp -d -p "\$SCRATCH")
 cat "\$PBS_NODEFILE" > "\$PBS_O_WORKDIR/.jobinfo"
 echo "\$LOCAL" >> "\$PBS_O_WORKDIR/.jobinfo"
+echo "\$PBS_JOBID" >> "\$PBS_O_WORKDIR/.jobinfo"
 
 cp -f "\$PBS_O_WORKDIR"/*.{inp,gbw,hess,opt,pot,xyz} "\$LOCAL" >& /dev/null
 
