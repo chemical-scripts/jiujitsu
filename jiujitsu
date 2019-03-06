@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION=0.5.0
+VERSION=0.6.0
 
 # Usage:
 #   jiujitsu [-n processors] [-t time-multiplier] program inputfile [inputfile...]
@@ -20,7 +20,7 @@ function help_page {
   }' "$0"
 }
 
-nprocs=1
+nprocs=8
 timemultiplier=1
 proc_hours_per_atom="7"
 
@@ -38,7 +38,7 @@ while getopts ":hvn:t:" opt "$@"; do
       exit 0
       ;;
     n)
-      # -n number of processors (does not currently work with ORCA in Gauss)
+      # -n number of processors
       nprocs=$OPTARG
       ;;
     t)
@@ -135,14 +135,15 @@ function submit_orca3_gauss {
   jobname=$(echo "$inputfile_basename" | cut -c 1-10)
   subscript="${jobname}.sh"
 
-  if grep -q "nprocs" "$inputfile"; then
-    nprocs=$(sed -ne '/nprocs/{s/.*nprocs[^0-9]*\([0-9][0-9]*\).*/\1/p}' \
-                     "$inputfile" | tail -1)
-  else
-    printf "\n%%pal\n nprocs 8\nend\n" >> "$inputfile"
+  sed -i -e '/pal/,/end/{
+    /nproc/d
+  }' "${inputfile_basename}.inp"
+  sed -i -e '/pal/{
+    N
+    s/^\s*%pal\s*end\s*$//
+  }' "${inputfile_basename}.inp"
 
-    nprocs="8"
-  fi
+  printf "%%pal\n nprocs %d\nend\n" "${nprocs}" >> "${inputfile_basename}.inp"
 
   cat <<eor > "${subscript}"
 #!/bin/bash
@@ -170,7 +171,7 @@ cd "\$PBS_O_WORKDIR"
 rm -rf "\$LOCAL"
 eor
 
-  #  $ jiujitsu orca {methane,ethane,n-propane}.inp
+  #  $ jiujitsu -n 8 orca3 {methane,ethane,n-propane}.inp
   qsub "${subscript}"
 }
 
@@ -181,14 +182,15 @@ function submit_orca4_gauss {
   jobname=$(echo "$inputfile_basename" | cut -c 1-10)
   subscript="${jobname}.sh"
 
-  if grep -q "nprocs" "$inputfile"; then
-    nprocs=$(sed -ne '/nprocs/{s/.*nprocs[^0-9]*\([0-9][0-9]*\).*/\1/p}' \
-                     "$inputfile" | tail -1)
-  else
-    printf "\n%%pal\n nprocs 8\nend\n" >> "$inputfile"
+  sed -i -e '/pal/,/end/{
+    /nproc/d
+  }' "${inputfile_basename}.inp"
+  sed -i -e '/pal/{
+    N
+    s/^\s*%pal\s*end\s*$//
+  }' "${inputfile_basename}.inp"
 
-    nprocs="8"
-  fi
+  printf "%%pal\n nprocs %d\nend\n" "${nprocs}" >> "${inputfile_basename}.inp"
 
   cat <<eor > "${subscript}"
 #!/bin/bash
@@ -218,7 +220,7 @@ cd "\$PBS_O_WORKDIR"
 rm -rf "\$LOCAL"
 eor
 
-  #  $ jiujitsu orca4 {methane,ethane,n-propane}.inp
+  #  $ jiujitsu -n 16 orca4 {methane,ethane,n-propane}.inp
   qsub "${subscript}"
 }
 
@@ -229,14 +231,15 @@ function submit_orca41_gauss {
   jobname=$(echo "$inputfile_basename" | cut -c 1-10)
   subscript="${jobname}.sh"
 
-  if grep -q "nprocs" "$inputfile"; then
-    nprocs=$(sed -ne '/nprocs/{s/.*nprocs[^0-9]*\([0-9][0-9]*\).*/\1/p}' \
-                     "$inputfile" | tail -1)
-  else
-    printf "\n%%pal\n nprocs 8\nend\n" >> "$inputfile"
+  sed -i -e '/pal/,/end/{
+    /nproc/d
+  }' "${inputfile_basename}.inp"
+  sed -i -e '/pal/{
+    N
+    s/^\s*%pal\s*end\s*$//
+  }' "${inputfile_basename}.inp"
 
-    nprocs="8"
-  fi
+  printf "%%pal\n nprocs %d\nend\n" "${nprocs}" >> "${inputfile_basename}.inp"
 
   cat <<eor > "${subscript}"
 #!/bin/bash
@@ -267,7 +270,7 @@ cd "\$PBS_O_WORKDIR"
 rm -rf "\$LOCAL"
 eor
 
-  #  $ jiujitsu orca41 {methane,ethane,n-propane}.inp
+  #  $ jiujitsu -n 24 orca41 {methane,ethane,n-propane}.inp
   qsub "${subscript}"
 }
 
