@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION=0.4.0
+VERSION=0.5.0
 
 # Usage:
 #   jiujitsu [-n processors] [-t time-multiplier] program inputfile [inputfile...]
@@ -271,7 +271,7 @@ eor
   qsub "${subscript}"
 }
 
-function submit_orca_jupiter {
+function submit_orca3_jupiter {
   inputfile=$1
 
   inputfile_basename=$(basename "$inputfile" ".inp")
@@ -321,6 +321,31 @@ function submit_orca4_jupiter {
              /nfs-share/scripts/submit.orca.2017out.sh -N "$inputfile_basename"
 }
 
+function submit_orca41_jupiter {
+  inputfile=$1
+
+  inputfile_basename=$(basename "$inputfile" ".inp")
+
+  if grep -q "\*xyzfile" ${inputfile}; then
+    natoms=$(echo "$(cat ${inputfile_basename}.xyz | wc -l) - 2" | bc)
+  else
+    natoms=$(sed -n -e '/\*xyz/,/^\*$/{/\*xyz/d;/^\*$/d;p}' $inputfile | wc -l)
+  fi
+
+  hours=$(echo "$timemultiplier*(($natoms*$proc_hours_per_atom)/$nprocs + 1)" | bc)
+
+  sed -i -e '/pal/,/end/{
+    /nproc/d
+  }' "$inputfile"
+  sed -i -e '/pal/{
+    N
+    s/^\s*%pal\s*end\s*$//
+  }' "$inputfile"
+
+  qsub -V -l nodes=1:ppn="$nprocs",walltime=00:"${hours}":00:00 \
+             /nfs-share/scripts/submit.orca.2018fev.sh -N "$inputfile_basename"
+}
+
 called_from=$(pwd)
 
 for inputfile in "$@"; do
@@ -352,11 +377,14 @@ for inputfile in "$@"; do
           nwchem)
             submit_nwchem_jupiter "$(basename "$inputfile")"
             ;;
-          orca)
-            submit_orca_jupiter "$(basename "$inputfile")"
+          orca3)
+            submit_orca3_jupiter "$(basename "$inputfile")"
             ;;
           orca4)
             submit_orca4_jupiter "$(basename "$inputfile")"
+            ;;
+          orca41)
+            submit_orca41_jupiter "$(basename "$inputfile")"
             ;;
         esac
         ;;
