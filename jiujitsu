@@ -6,6 +6,8 @@ VERSION=0.6.0
 #   jiujitsu -h
 #   jiujitsu -v
 
+TMPDIR=$HOME/tmp
+
 function version_page {
   echo "$(basename "$0")" "$VERSION"
 }
@@ -18,6 +20,11 @@ function help_page {
     s/    //
     s/# //p
   }' "$0"
+}
+
+function get_realpath {
+  # https://stackoverflow.com/a/3915420/4039050
+  echo "$(cd "$(dirname "$1")"; pwd -P)/$(basename "$1")"
 }
 
 nprocs=8
@@ -203,7 +210,7 @@ function submit_orca4_gauss {
 INPUT="${inputfile_basename}"
 
 OMP_NUM_THREADS=${nprocs}
-ORCA4="/home/u/dudektri/bin/orca_4_0_1_2_linux_x86-64_openmpi202/orca"
+ORCA4="$HOME/bin/orca_4_0_1_2_linux_x86-64_openmpi202/orca"
 
 LOCAL=\$(mktemp -d -p "\$SCRATCH")
 cat "\$PBS_NODEFILE" > "\$PBS_O_WORKDIR/.jobinfo"
@@ -252,8 +259,8 @@ function submit_orca41_gauss {
 INPUT="${inputfile_basename}"
 
 OMP_NUM_THREADS=${nprocs}
-ORCA41="/home/u/dudektri/bin/orca_4_1_1_linux_x86-64_shared_openmpi215/orca"
-export LD_LIBRARY_PATH="/home/u/dudektri/lib/orca_4_1_1_linux_x86-64_shared_openmpi215:\$LD_LIBRARY_PATH"
+ORCA41="$HOME/bin/orca_4_1_1_linux_x86-64_shared_openmpi215/orca"
+export LD_LIBRARY_PATH="$HOME/lib/orca_4_1_1_linux_x86-64_shared_openmpi215:\$LD_LIBRARY_PATH"
 
 LOCAL=\$(mktemp -d -p "\$SCRATCH")
 cat "\$PBS_NODEFILE" > "\$PBS_O_WORKDIR/.jobinfo"
@@ -394,13 +401,17 @@ for inputfile in "$@"; do
       mothership)
         nohup marathon -n "$nprocs" "$program" "$inputfile" &> /dev/null &
         ;;
-    esac
+    esac &> $TMPDIR/last-jiujitsu-submission
   else
     echo "  $inputfile does not exist or is not readable."
     exit 1
   fi
 
   cd "$called_from"
+
+  if grep -q "qsub: would exceed complex's per-user limit" $TMPDIR/last-jiujitsu-submission; then
+    echo "$0 -n${nprocs} ${program} $(get_realpath "${inputfile}")"
+  fi
 done
 
 # jiujitsu <https://github.com/chemical-scripts/jiujitsu>
